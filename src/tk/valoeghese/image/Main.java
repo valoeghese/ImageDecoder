@@ -14,29 +14,55 @@ public final class Main {
 	public static void main(String[] args) {
 		programArgs = ArgsParser.of(args, new Args());
 
-		ModifiableImage image = ImageUtil.loadImage(programArgs.inFile);
-		image.modifyPixels(rgb -> {
-			int r = modifyChannel((rgb >> 16) & 255);
-			int g = modifyChannel((rgb >> 8) & 255);
-			int b = modifyChannel(rgb & 255);
+		if (programArgs.doEncode) {
+			ModifiableImage image = ImageUtil.loadImage(programArgs.inFile);
 
-			int result = 255;
-			result = (result << 8) + r;
-			result = (result << 8) + g;
-			result = (result << 8) + b;
+			image.modifyPixels(rgb -> {
+				int r = decodeChannel((rgb >> 16) & 255);
+				int g = decodeChannel((rgb >> 8) & 255);
+				int b = decodeChannel(rgb & 255);
 
-			return result;
-		});
+				int result = 255;
+				result = (result << 8) + r;
+				result = (result << 8) + g;
+				result = (result << 8) + b;
 
-		ImageUtil.writeImage(programArgs.outFile, image);		
+				return result;
+			});
+
+			ImageUtil.writeImage(programArgs.outFile, image);
+		} else {
+			ModifiableImage maskImage = ImageUtil.loadImage(programArgs.maskFile);
+			ModifiableImage encodingImage = ImageUtil.loadImage(programArgs.inFile);
+
+			maskImage.mergePixels((rgb, otherRGB) -> {
+				int r = encodeChannel((rgb >> 16) & 255, (otherRGB >> 16) & 255);
+				int g = encodeChannel((rgb >> 8) & 255, (otherRGB >> 8) & 255);
+				int b = encodeChannel(rgb & 255, otherRGB & 255);
+
+				int result = 255;
+				result = (result << 8) + r;
+				result = (result << 8) + g;
+				result = (result << 8) + b;
+
+				return result;
+			}, encodingImage);
+
+			ImageUtil.writeImage(programArgs.outFile, maskImage);
+		}
+	}
+
+	private static int decodeChannel(int in) {
+		return (in & 0b11) << 6;
 	}
 	
-	private static int modifyChannel(int in) {
-		return (in & 0b11) << 6;
+	private static int encodeChannel(int in, int other) {
+		return (in & 0b11111100) | (other >> 6);
 	}
 
 	public static final class Args implements IProgramArgs {
-		private File inFile, outFile;
+		private File inFile, outFile, maskFile;
+		private boolean doEncode;
 
 		private Args() {
 		}
@@ -45,6 +71,8 @@ public final class Main {
 		public void setArgs(ArgsData data) {
 			this.inFile = new File(data.getString("in", "./image.png"));
 			this.outFile = new File(data.getString("out", "./output.png"));
+			this.maskFile = new File(data.getString("mask", "./mask.png"));
+			this.doEncode = data.getBoolean("encode");
 		}
 	}
 
