@@ -15,23 +15,6 @@ public final class Main {
 		programArgs = ArgsParser.of(args, new Args());
 
 		if (programArgs.doEncode) {
-			ModifiableImage image = ImageUtil.loadImage(programArgs.inFile);
-
-			image.modifyPixels(rgb -> {
-				int r = decodeChannel((rgb >> 16) & 255);
-				int g = decodeChannel((rgb >> 8) & 255);
-				int b = decodeChannel(rgb & 255);
-
-				int result = 255;
-				result = (result << 8) + r;
-				result = (result << 8) + g;
-				result = (result << 8) + b;
-
-				return result;
-			});
-
-			ImageUtil.writeImage(programArgs.outFile, image);
-		} else {
 			ModifiableImage maskImage = ImageUtil.loadImage(programArgs.maskFile);
 			ModifiableImage encodingImage = ImageUtil.loadImage(programArgs.inFile);
 
@@ -49,6 +32,23 @@ public final class Main {
 			}, encodingImage);
 
 			ImageUtil.writeImage(programArgs.outFile, maskImage);
+		} else {
+			ModifiableImage image = ImageUtil.loadImage(programArgs.inFile);
+
+			image.modifyPixels(rgb -> {
+				int r = decodeChannel((rgb >> 16) & 255);
+				int g = decodeChannel((rgb >> 8) & 255);
+				int b = decodeChannel(rgb & 255);
+
+				int result = 255;
+				result = (result << 8) + r;
+				result = (result << 8) + g;
+				result = (result << 8) + b;
+
+				return result;
+			});
+
+			ImageUtil.writeImage(programArgs.outFile, image);
 		}
 	}
 
