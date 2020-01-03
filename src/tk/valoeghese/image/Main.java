@@ -16,13 +16,14 @@ public final class Main {
 
 		ModifiableImage image = ImageUtil.loadImage(programArgs.inFile);
 		image.modifyPixels(rgb -> {
-			int r = modifyChannel((rgb >> 16) & 255);
-			int g = modifyChannel((rgb >> 6) & 255);
-			int b = modifyChannel(rgb & 255);
+			int r = modifyChannel((rgb >> 24) & 255);
+			int g = modifyChannel((rgb >> 16) & 255);
+			int b = modifyChannel((rgb >> 8) & 255);
 
 			int result = r;
 			result = (result << 8) + g;
 			result = (result << 8) + b;
+			result = (result << 8) + 255;
 
 			return result;
 		});
